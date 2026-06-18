@@ -196,4 +196,17 @@ Incluir el nombre en español seguido de la sigla en inglés entre paréntesis a
 9. **Notas del autor:** si el original incluye comentarios entre corchetes o notas del traductor, mantenerlos visibles con la etiqueta [Nota del Traductor:]
 10. **Estructura:** respetar encabezados, jerarquía de secciones, listas y formato de tablas tal como aparecen en el original
 
-Una vez aplicadas estas reglas, traduce el documento compartido y guarda el resultado como `[nombre_original]_ES.md` en la misma carpeta del archivo original. Al finalizar, indica la ruta del archivo generado y el número aproximado de secciones traducidas.
+## Procedimiento de traducción por secciones (documentos largos)
+
+Para documentos de más de 500 líneas, traduce de forma progresiva — **nunca leas todo el archivo antes de empezar a escribir**:
+
+1. Lee las primeras ~600 líneas del archivo `.md`
+2. Tradúcelas aplicando todas las reglas anteriores
+3. Escribe el resultado en `[nombre_original]_ES.md` (primera sección con Write; siguientes con Edit/append)
+4. Avanza al siguiente bloque de ~600 líneas
+5. Repite hasta cubrir todo el documento
+6. Al finalizar confirma: ruta del archivo generado, tamaño y número de secciones procesadas
+
+Para documentos cortos (menos de 500 líneas), traduce en una sola pasada.
+
+Este procedimiento reduce el tiempo de respuesta de ~4 minutos a ~1 minuto por sección, manteniendo la misma calidad técnica.
