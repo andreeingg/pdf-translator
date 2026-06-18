@@ -1,14 +1,19 @@
 """
 Pipeline PDF - Conversion de documentos
 Uso:
-  python pdf_pipeline.py to-md  <archivo.pdf>   -> genera <archivo.md>
-  python pdf_pipeline.py to-pdf <archivo_ES.md> -> genera <archivo_ES.pdf>
+  python pdf_pipeline.py to-md    <archivo.pdf>   -> genera <archivo.md>
+  python pdf_pipeline.py to-pdf   <archivo_ES.md> -> genera <archivo_ES.pdf>
+  python pdf_pipeline.py translate <archivo.pdf>  -> pipeline completo (PDF->MD->Claude->PDF)
 """
 
 import sys
 import warnings
 import argparse
+import subprocess
 from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).parent
+DEFAULT_PROMPT = SCRIPT_DIR / "prompt_traduccion.md"
 
 import markdown
 from xhtml2pdf import pisa
@@ -90,6 +95,44 @@ def cmd_to_md(pdf_path: Path) -> None:
     print(f"  \"{out_path}\"")
 
 
+def cmd_translate(pdf_path: Path, prompt_path: Path) -> None:
+    """Pipeline completo: PDF -> MD -> Claude traduce -> PDF."""
+    if not prompt_path.exists():
+        print(f"[ERROR] No se encontro el prompt de traduccion: {prompt_path}")
+        print(f"Asegurate de que 'prompt_traduccion.md' este en la misma carpeta que el script.")
+        sys.exit(1)
+
+    # Paso 1: PDF -> MD
+    cmd_to_md(pdf_path)
+    md_path = pdf_path.with_suffix(".md")
+    es_md_path = md_path.parent / f"{md_path.stem}_ES.md"
+
+    # Paso 2: construir mensaje para Claude
+    prompt_content = prompt_path.read_text(encoding="utf-8")
+    message = (
+        f"{prompt_content}\n\n"
+        f"Traduce el siguiente archivo y guarda el resultado en:\n"
+        f"\"{es_md_path}\"\n\n"
+        f"Archivo a traducir:\n\"{md_path}\""
+    )
+
+    # Paso 3: lanzar Claude Code con el mensaje precargado
+    print(f"\nAbriendo Claude Code para la traduccion...")
+    print(f"Cuando Claude termine, escribe /exit para continuar con la generacion del PDF.")
+    print("-" * 60)
+    subprocess.run(["claude", message])
+
+    # Paso 4: MD traducido -> PDF
+    print("\n" + "-" * 60)
+    if es_md_path.exists():
+        print("Traduccion detectada. Generando PDF...")
+        cmd_to_pdf(es_md_path)
+    else:
+        print(f"[AVISO] No se detecto el archivo traducido: {es_md_path.name}")
+        print(f"Cuando este listo, ejecuta:")
+        print(f'  python pdf_pipeline.py to-pdf "{es_md_path}"')
+
+
 def cmd_to_pdf(md_path: Path) -> None:
     """Convierte Markdown a PDF en la misma carpeta."""
     if not md_path.exists():
@@ -132,21 +175,29 @@ def main():
         description="Pipeline PDF <-> Markdown",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""Ejemplos:
-  python pdf_pipeline.py to-md  informe.pdf       (PDF -> Markdown)
-  python pdf_pipeline.py to-pdf informe_ES.md     (Markdown -> PDF)
+  python pdf_pipeline.py translate informe.pdf        (pipeline completo)
+  python pdf_pipeline.py to-md     informe.pdf        (solo PDF -> Markdown)
+  python pdf_pipeline.py to-pdf    informe_ES.md      (solo Markdown -> PDF)
 """
     )
     sub = parser.add_subparsers(dest="comando", required=True)
 
-    p_md = sub.add_parser("to-md", help="PDF -> Markdown")
+    p_tr = sub.add_parser("translate", help="Pipeline completo: PDF -> traduccion Claude -> PDF")
+    p_tr.add_argument("archivo", help="Archivo .pdf de entrada")
+    p_tr.add_argument("--prompt", default=str(DEFAULT_PROMPT),
+                      help=f"Ruta al prompt de traduccion (default: junto al script)")
+
+    p_md = sub.add_parser("to-md", help="Solo PDF -> Markdown")
     p_md.add_argument("archivo", help="Archivo .pdf de entrada")
 
-    p_pdf = sub.add_parser("to-pdf", help="Markdown -> PDF")
+    p_pdf = sub.add_parser("to-pdf", help="Solo Markdown -> PDF")
     p_pdf.add_argument("archivo", help="Archivo .md de entrada")
 
     args = parser.parse_args()
 
-    if args.comando == "to-md":
+    if args.comando == "translate":
+        cmd_translate(Path(args.archivo), Path(args.prompt))
+    elif args.comando == "to-md":
         cmd_to_md(Path(args.archivo))
     else:
         cmd_to_pdf(Path(args.archivo))
