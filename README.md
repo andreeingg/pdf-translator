@@ -39,10 +39,17 @@ python pdf_pipeline.py to-md  "ruta/al/informe.pdf"
 Genera `informe.md` en la misma carpeta.
 
 ### Paso 2: Traduccion con Claude
-Abre Claude Code y comparte la ruta del `.md`:
-> "Traduccion tecnica del ingles al espanol: ruta/informe.md"
 
-Claude lee el archivo, lo traduce y guarda `informe_ES.md`.
+1. Abre una sesion nueva de Claude Code
+2. Pega el contenido de `prompt_traduccion.md` (establece el rol de especialista)
+3. Comparte la ruta del `.md`:
+   > "Traduce este documento: ruta/informe.md"
+
+Claude actua como hidrogeólogo senior, aplica la terminología técnica correcta
+y guarda `informe_ES.md` en la misma carpeta.
+
+> Si abres Claude Code desde la carpeta `pdf-translator/`, el archivo `CLAUDE.md`
+> carga el contexto automaticamente — no necesitas pegar el prompt.
 
 ### Paso 3: Markdown a PDF
 ```bash
